@@ -1,19 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"crypto/rsa"
-	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"net/http"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/mendsley/gojwk"
 )
 
 func main() {
@@ -22,8 +18,8 @@ func main() {
 	r.HandleFunc("/api", apiHandler)
 	http.Handle("/", r)
 
-	fmt.Println("Application running on port 8080")
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Application running on port 9999")
+	http.ListenAndServe(":9999", nil)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,47 +42,17 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func myLookupKey(kid string) (interface{}, error) {
-	fmt.Printf("Kid : %v\n", kid)
+	//fmt.Printf("Kid : %v\n", kid)
 	var v map[string]interface{}
 	parseJSONFromURL("https://accounts.google.com/.well-known/openid-configuration", &v)
-	parseJSONFromURL(v["jwks_uri"].(string), &v)
-	for _, keystr := range v["keys"].([]interface{}) {
-		if key, ok := keystr.(map[string]interface{}); ok {
-			if key["kid"].(string) == kid {
-				return createPublicKey(key["n"].(string), key["e"].(string)), nil
-			}
+	var keys struct{ Keys []gojwk.Key }
+	parseJSONFromURL(v["jwks_uri"].(string), &keys)
+	for _, key := range keys.Keys {
+		if key.Kid == kid {
+			return key.DecodePublicKey()
 		}
 	}
 	return nil, fmt.Errorf("Key not found")
-}
-
-func createPublicKey(nStr, eStr string) *rsa.PublicKey {
-	// N part
-	nDec, _ := base64.URLEncoding.DecodeString(nStr)
-	n := big.NewInt(0)
-	n.SetBytes(nDec)
-
-	// E part
-	eDec, _ := base64.URLEncoding.DecodeString(eStr)
-	var eBytes []byte
-	if len(eDec) < 8 {
-		eBytes = make([]byte, 8-len(eDec), 8)
-		eBytes = append(eBytes, eDec...)
-	} else {
-		eBytes = eDec
-	}
-	eReader := bytes.NewReader(eBytes)
-	var e uint64
-	binary.Read(eReader, binary.BigEndian, &e)
-
-	// Debug ...
-	//fmt.Printf("N : %v\n", n)
-	//fmt.Printf("E : %v\n", e)
-
-	pk := &rsa.PublicKey{N: n, E: int(e)}
-
-	fmt.Printf("%v", pk)
-	return pk
 }
 
 func parseJSONFromURL(url string, v interface{}) {

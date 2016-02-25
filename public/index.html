@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="google-signin-scope" content="profile email">
-        <meta name="google-signin-client_id" content="1051678477733-lgtdve4qeaecsuh1un8fi5d4afm2muul.apps.googleusercontent.com">
+        <meta name="google-signin-client_id" content="472089956665-1hh4o4jm0ormn6ip849efomnui3f1nla.apps.googleusercontent.com">
         <script src="https://apis.google.com/js/platform.js" async defer></script>
     </head>
     <body>
@@ -21,6 +21,7 @@
                 console.log("Email: " + profile.getEmail());
 
                 // The ID token you need to pass to your backend:
+                console.log(googleUser.getAuthResponse());
                 var id_token = googleUser.getAuthResponse().id_token;
                 console.log("ID Token: " + id_token);
                 localStorage.setItem('id_token', id_token);
