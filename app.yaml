@@ -1,0 +1,14 @@
+application: tu-preferes-1330
+service: get-google-token
+version: alpha-001
+runtime: go
+api_version: go1
+
+handlers:
+- url: /api
+  script: _go_app
+- url: /
+  static_files: public/index.html
+  upload: public/index\.html
+- url: /
+  static_dir: public
